@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Actualizar Base de Trabajadores</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+</head>
+
+<body>
+
+<h2>Actualizar base de trabajadores</h2>
+
+<input type="file" id="excel"><br><br>
+<button onclick="actualizarBase()">🔥 Actualizar Base</button>
+
+<script>
+
+// 🔥 CONFIG FIREBASE
+var firebaseConfig = {
+  apiKey: "AIzaSyA0J5FQsMU0XGhQ0WTD_M1iuXQ71T2caFs",
+  authDomain: "terraflux-database.firebaseapp.com",
+  databaseURL: "https://terraflux-database-default-rtdb.firebaseio.com",
+  projectId: "terraflux-database",
+  storageBucket: "terraflux-database.firebasestorage.app",
+  messagingSenderId: "1055680733887",
+  appId: "1:1055680733887:web:176caffdd9c1f422461c0a",
+  measurementId: "G-ZS7TNW4ZN0"
+};
+
+firebase.initializeApp(firebaseConfig);
+var db = firebase.database();
+
+let datosExcel = [];
+
+// 📂 Cargar Excel
+document.getElementById('excel').addEventListener('change', function(e){
+
+    const file = e.target.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function(e){
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, {type: 'array'});
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        
+        datosExcel = XLSX.utils.sheet_to_json(sheet);
+
+        alert("✅ Excel cargado, ahora puedes actualizar");
+    };
+
+    reader.readAsArrayBuffer(file);
+});
+
+// 🔥 BOTÓN ACTUALIZAR
+function actualizarBase(){
+
+    if(datosExcel.length === 0){
+        alert("⚠️ Primero carga un Excel");
+        return;
+    }
+
+    if(!confirm("⚠️ Esto borrará toda la base y la volverá a cargar. ¿Continuar?")){
+        return;
+    }
+
+    // 🧹 borrar base
+    db.ref("trabajadores").remove().then(() => {
+
+        console.log("Base limpia");
+
+        // 🚀 subir datos
+        datosExcel.forEach(trabajador => {
+
+            let id = trabajador.id;
+
+            db.ref("trabajadores/" + id).set({
+                nombre: trabajador.nombres,
+                apellido_paterno: trabajador.apellido_paterno,
+                apellido_materno: trabajador.apellido_materno,
+                sexo: trabajador.sexo,
+                fecha_ingreso: trabajador.fecha_ingreso,
+                fecha_reingreso: trabajador.fecha_reingreso,
+                fecha_cese: trabajador.fecha_cese,
+                motivo_cese: trabajador.motivo_cese,
+                observaciones: trabajador.observaciones,
+                zona: trabajador.zona_procedencia,
+                estado: trabajador.estado
+            });
+
+        });
+
+        alert("🔥 Base actualizada correctamente");
+
+    });
+
+}
+
+</script>
+
+</body>
+</html>
