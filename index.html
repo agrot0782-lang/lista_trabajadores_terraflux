@@ -1,99 +1,305 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+
 <meta charset="UTF-8">
+
 <title>Actualizar Base de Trabajadores</title>
 
+<!-- XLSX -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-<!-- Firebase -->
+<!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<style>
+
+body{
+
+    font-family:Arial, sans-serif;
+
+    background:#f3f4f6;
+
+    padding:40px;
+
+}
+
+.box{
+
+    background:white;
+
+    max-width:500px;
+
+    margin:auto;
+
+    padding:30px;
+
+    border-radius:20px;
+
+    box-shadow:
+    0 4px 20px rgba(0,0,0,0.08);
+
+}
+
+h2{
+
+    margin-top:0;
+
+    margin-bottom:24px;
+
+    color:#111827;
+
+}
+
+input{
+
+    width:100%;
+
+    margin-bottom:20px;
+
+}
+
+button{
+
+    width:100%;
+
+    border:none;
+
+    background:#2563eb;
+
+    color:white;
+
+    padding:14px;
+
+    border-radius:14px;
+
+    font-size:16px;
+
+    font-weight:600;
+
+    cursor:pointer;
+
+    transition:0.2s;
+
+}
+
+button:hover{
+
+    transform:translateY(-2px);
+
+    background:#1d4ed8;
+
+}
+
+.status{
+
+    margin-top:20px;
+
+    font-size:14px;
+
+    color:#374151;
+
+}
+
+</style>
+
 </head>
 
 <body>
 
-<h2>Actualizar base de trabajadores</h2>
+<div class="box">
 
-<input type="file" id="excel"><br><br>
-<button onclick="actualizarBase()">🔥 Actualizar Base</button>
+    <h2>
+        🔥 Actualizar Base de Trabajadores
+    </h2>
+
+    <input
+    type="file"
+    id="excel">
+
+    <button onclick="actualizarBase()">
+        Actualizar Base
+    </button>
+
+    <div
+    class="status"
+    id="status">
+        Esperando Excel...
+    </div>
+
+</div>
 
 <script>
 
-// 🔥 CONFIG FIREBASE
+// 🔥 FIREBASE
 var firebaseConfig = {
-  apiKey: "AIzaSyDz4RqKjSJxB0F5eP4RzajQtW94cPXmpSg",
-  authDomain: "data-b6691.firebaseapp.com",
-  projectId: "data-b6691",
-  storageBucket: "data-b6691.firebasestorage.app",
-  messagingSenderId: "932857865624",
-  appId: "1:932857865624:web:20408d56e0a821aae737ed",
-  measurementId: "G-G16TH0Y127"
+
+    apiKey: "AIzaSyDz4RqKjSJxB0F5eP4RzajQtW94cPXmpSg",
+
+    authDomain: "data-b6691.firebaseapp.com",
+
+    projectId: "data-b6691",
+
+    storageBucket: "data-b6691.firebasestorage.app",
+
+    messagingSenderId: "932857865624",
+
+    appId: "1:932857865624:web:20408d56e0a821aae737ed",
+
+    measurementId: "G-G16TH0Y127"
+
 };
 
 firebase.initializeApp(firebaseConfig);
+
 var db = firebase.database();
 
 let datosExcel = [];
 
-// 📂 Cargar Excel
-document.getElementById('excel').addEventListener('change', function(e){
+// 🔥 CARGAR EXCEL
+document
+.getElementById("excel")
+.addEventListener("change", function(e){
 
     const file = e.target.files[0];
+
     const reader = new FileReader();
 
     reader.onload = function(e){
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, {type: 'array'});
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        
-        datosExcel = XLSX.utils.sheet_to_json(sheet);
 
-        alert("✅ Excel cargado, ahora puedes actualizar");
+        const data =
+        new Uint8Array(e.target.result);
+
+        const workbook =
+        XLSX.read(data,{
+            type:'array'
+        });
+
+        const sheet =
+        workbook.Sheets[
+            workbook.SheetNames[0]
+        ];
+
+        // 🔥 EMPEZAR DESDE FILA 3
+        datosExcel =
+        XLSX.utils.sheet_to_json(sheet,{
+
+            range:2
+
+        });
+
+        console.log(datosExcel);
+
+        document
+        .getElementById("status")
+        .innerText =
+        "✅ Excel cargado correctamente";
+
     };
 
     reader.readAsArrayBuffer(file);
+
 });
 
-// 🔥 BOTÓN ACTUALIZAR
+// 🔥 ACTUALIZAR BASE
 function actualizarBase(){
 
     if(datosExcel.length === 0){
-        alert("⚠️ Primero carga un Excel");
+
+        alert(
+            "⚠️ Primero carga un Excel"
+        );
+
         return;
+
     }
 
-    if(!confirm("⚠️ Esto borrará toda la base y la volverá a cargar. ¿Continuar?")){
+    if(!confirm(
+        "⚠️ Esto borrará la base actual y cargará la nueva. ¿Continuar?"
+    )){
+
         return;
+
     }
 
-    // 🧹 borrar base
-    db.ref("trabajadores").remove().then(() => {
+    // 🔥 LIMPIAR BASE
+    db.ref("trabajadores")
+    .remove()
 
-        console.log("Base limpia");
+    .then(()=>{
 
-        // 🚀 subir datos
+        console.log(
+            "🔥 Base eliminada"
+        );
+
+        // 🔥 SUBIR DATOS
         datosExcel.forEach(trabajador => {
 
-            let id = trabajador.id;
+            let LEGAJO =
+            trabajador["LEGAJO"];
 
-            db.ref("trabajadores/" + id).set({
-                nombre: trabajador.nombres,
-                apellido_paterno: trabajador.apellido_paterno,
-                apellido_materno: trabajador.apellido_materno,
-                sexo: trabajador.sexo,
-                fecha_ingreso: trabajador.fecha_ingreso,
-                fecha_reingreso: trabajador.fecha_reingreso,
-                fecha_cese: trabajador.fecha_cese,
-                motivo_cese: trabajador.motivo_cese,
-                observaciones: trabajador.observaciones,
-                zona: trabajador.zona_procedencia,
-                estado: trabajador.estado
+            if(!LEGAJO) return;
+
+            db.ref(
+                "trabajadores/" + LEGAJO
+            ).set({
+
+                nombre:
+                trabajador["NOMBRES"] || "",
+
+                apellido_paterno:
+                trabajador["APELLIDO PATERNO"] || "",
+
+                apellido_materno:
+                trabajador["APELLIDO MATERNO"] || "",
+
+                sexo:
+                trabajador["SEXO"] || "",
+
+                fecha_ingreso:
+                trabajador["FECHA INGRESO"] || "",
+
+                fecha_reingreso:
+                trabajador["FECHA REINGRESO"] || "",
+
+                fecha_cese:
+                trabajador["FECHA CESE"] || "",
+
+                motivo_cese:
+                trabajador["MOTIVO CESE"] || "",
+
+                observaciones:
+                trabajador["OBSERVACIONES"] || "",
+
+                zona:
+                trabajador["ZONA PROCEDENCIA"] || "",
+
+                estado:
+                trabajador["ESTADO"] || ""
+
             });
 
         });
 
-        alert("🔥 Base actualizada correctamente");
+        alert(
+            "🔥 Base actualizada correctamente"
+        );
+
+        document
+        .getElementById("status")
+        .innerText =
+        "🔥 Base actualizada correctamente";
+
+    })
+
+    .catch(error => {
+
+        console.error(error);
+
+        alert(
+            "❌ Error al actualizar"
+        );
 
     });
 
