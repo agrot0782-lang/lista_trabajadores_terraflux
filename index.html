@@ -4,7 +4,7 @@
 
 <meta charset="UTF-8">
 
-<title>Actualizar Base de Trabajadores</title>
+<title>Actualizar Bases Firebase</title>
 
 <!-- XLSX -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -29,9 +29,9 @@ body{
 
     background:white;
 
-    max-width:500px;
+    max-width:700px;
 
-    margin:auto;
+    margin:auto auto 30px auto;
 
     padding:30px;
 
@@ -108,6 +108,8 @@ button:hover{
 
 <body>
 
+<!-- 🔥 TRABAJADORES -->
+
 <div class="box">
 
     <h2>
@@ -116,16 +118,44 @@ button:hover{
 
     <input
     type="file"
-    id="excel">
+    id="excelTrabajadores">
 
     <button onclick="actualizarBase()">
-        Actualizar Base
+        Actualizar Trabajadores
     </button>
 
     <div
     class="status"
-    id="status">
+    id="statusTrabajadores">
+
         Esperando Excel...
+
+    </div>
+
+</div>
+
+<!-- 🔥 AREAS -->
+
+<div class="box">
+
+    <h2>
+        🔥 Actualizar Base de Areas
+    </h2>
+
+    <input
+    type="file"
+    id="excelAreas">
+
+    <button onclick="importarAreas()">
+        Actualizar Areas
+    </button>
+
+    <div
+    class="status"
+    id="statusAreas">
+
+        Esperando Excel...
+
     </div>
 
 </div>
@@ -155,11 +185,17 @@ firebase.initializeApp(firebaseConfig);
 
 var db = firebase.database();
 
-let datosExcel = [];
+// 🔥 ARRAYS
+let datosTrabajadores = [];
+let datosAreas = [];
 
-// 🔥 CARGAR EXCEL
+
+// ======================================================
+// 🔥 CARGAR EXCEL TRABAJADORES
+// ======================================================
+
 document
-.getElementById("excel")
+.getElementById("excelTrabajadores")
 .addEventListener("change", function(e){
 
     const file = e.target.files[0];
@@ -181,18 +217,17 @@ document
             workbook.SheetNames[0]
         ];
 
-        // 🔥 EMPEZAR DESDE FILA 3
-        datosExcel =
+        datosTrabajadores =
         XLSX.utils.sheet_to_json(sheet,{
 
             range:2
 
         });
 
-        console.log(datosExcel);
+        console.log(datosTrabajadores);
 
         document
-        .getElementById("status")
+        .getElementById("statusTrabajadores")
         .innerText =
         "✅ Excel cargado correctamente";
 
@@ -202,10 +237,14 @@ document
 
 });
 
-// 🔥 ACTUALIZAR BASE
+
+// ======================================================
+// 🔥 ACTUALIZAR TRABAJADORES
+// ======================================================
+
 function actualizarBase(){
 
-    if(datosExcel.length === 0){
+    if(datosTrabajadores.length === 0){
 
         alert(
             "⚠️ Primero carga un Excel"
@@ -223,7 +262,6 @@ function actualizarBase(){
 
     }
 
-    // 🔥 LIMPIAR BASE
     db.ref("trabajadores")
     .remove()
 
@@ -233,8 +271,7 @@ function actualizarBase(){
             "🔥 Base eliminada"
         );
 
-        // 🔥 SUBIR DATOS
-        datosExcel.forEach(trabajador => {
+        datosTrabajadores.forEach(trabajador => {
 
             let LEGAJO =
             trabajador["LEGAJO"];
@@ -287,7 +324,7 @@ function actualizarBase(){
         );
 
         document
-        .getElementById("status")
+        .getElementById("statusTrabajadores")
         .innerText =
         "🔥 Base actualizada correctamente";
 
@@ -300,6 +337,165 @@ function actualizarBase(){
         alert(
             "❌ Error al actualizar"
         );
+
+    });
+
+}
+
+
+// ======================================================
+// 🔥 CARGAR EXCEL AREAS
+// ======================================================
+
+document
+.getElementById("excelAreas")
+.addEventListener("change", function(e){
+
+    const file = e.target.files[0];
+
+    const reader = new FileReader();
+
+    reader.onload = function(e){
+
+        const data =
+        new Uint8Array(e.target.result);
+
+        const workbook =
+        XLSX.read(data,{
+            type:'array'
+        });
+
+        const sheet =
+        workbook.Sheets[
+            workbook.SheetNames[0]
+        ];
+
+        datosAreas =
+        XLSX.utils.sheet_to_json(sheet,{
+
+            range:2
+
+        });
+
+        console.log(datosAreas);
+
+        document
+        .getElementById("statusAreas")
+        .innerText =
+        "✅ Excel de Areas cargado";
+
+    };
+
+    reader.readAsArrayBuffer(file);
+
+});
+
+
+// ======================================================
+// 🔥 IMPORTAR AREAS
+// ======================================================
+
+function importarAreas(){
+
+    if(datosAreas.length === 0){
+
+        alert("⚠️ Primero carga un Excel");
+
+        return;
+
+    }
+
+    if(!confirm(
+        "⚠️ Esto actualizará la base de areas. ¿Continuar?"
+    )){
+
+        return;
+
+    }
+
+    db.ref("areas")
+    .remove()
+
+    .then(()=>{
+
+        let updates = {};
+
+        datosAreas.forEach(row => {
+
+            let legajo =
+            String(row["LEGAJO"] || "")
+            .trim();
+
+            if(!legajo) return;
+
+            updates[
+                "areas/" + legajo
+            ] = {
+
+                legajo: legajo,
+
+                trabajador:
+                row["TRABAJADOR"] || "",
+
+                actividad:
+                row["ACTIVIDAD"] || "",
+
+                supervisor:
+                row["SUPERVISOR"] || "",
+
+                grupo:
+                row["GRUPO"] || "",
+
+                empresa:
+                row["EMPRESA"] || "",
+
+                centro_costo:
+                row["CENTRO DE COSTO"] || "",
+
+                sexo:
+                row["SEXO"] || "",
+
+                procedencia:
+                row["PROCEDENCIA"] || "",
+
+                residencia:
+                row["RESIDENCIA"] || "",
+
+                fecha:
+                row["FECHA"] || "",
+
+                estado:
+                row["ESTADO REG."] || ""
+
+            };
+
+        });
+
+        db.ref()
+        .update(updates)
+
+        .then(()=>{
+
+            alert(
+                "✅ Areas importadas correctamente"
+            );
+
+            document
+            .getElementById("statusAreas")
+            .innerText =
+            "✅ Base de Areas actualizada";
+
+        })
+
+        .catch(error => {
+
+            console.log(error);
+
+            alert(
+                "❌ Error importando areas"
+            );
+
+        });
 
     });
 
