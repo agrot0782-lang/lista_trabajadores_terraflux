@@ -159,7 +159,29 @@ button:hover{
     </div>
 
 </div>
+<div class="box">
 
+    <h2>
+        🔥 Actualizar Asistencia
+    </h2>
+
+    <input
+    type="file"
+    id="excelAsistencia">
+
+    <button onclick="importarAsistencia()">
+        Actualizar Asistencia
+    </button>
+
+    <div
+    class="status"
+    id="statusAsistencia">
+
+        Esperando Excel...
+
+    </div>
+
+</div>
 <script>
 
 // 🔥 FIREBASE
@@ -188,7 +210,7 @@ var db = firebase.database();
 // 🔥 ARRAYS
 let datosTrabajadores = [];
 let datosAreas = [];
-
+let datosAsistencia = [];
 
 // ======================================================
 // 🔥 CARGAR EXCEL TRABAJADORES
@@ -390,6 +412,51 @@ document
 
 });
 
+// ======================================================
+// 🔥 CARGAR ASISTENCIA
+// ======================================================
+
+document
+.getElementById("excelAsistencia")
+.addEventListener("change", function(e){
+
+    const file = e.target.files[0];
+
+    const reader = new FileReader();
+
+    reader.onload = function(e){
+
+        const data =
+        new Uint8Array(e.target.result);
+
+        const workbook =
+        XLSX.read(data,{
+            type:'array'
+        });
+
+        const sheet =
+        workbook.Sheets[
+            workbook.SheetNames[0]
+        ];
+
+        datosAsistencia =
+        XLSX.utils.sheet_to_json(sheet,{
+            range:2
+        });
+
+        console.log(datosAsistencia);
+
+        document
+        .getElementById("statusAsistencia")
+        .innerText =
+        "✅ Excel de Asistencia cargado";
+
+    };
+
+    reader.readAsArrayBuffer(file);
+
+});
+
 
 // ======================================================
 // 🔥 IMPORTAR AREAS
@@ -500,7 +567,116 @@ function importarAreas(){
     });
 
 }
+function importarAsistencia(){
 
+    if(datosAsistencia.length === 0){
+
+        alert(
+            "⚠️ Primero carga un Excel"
+        );
+
+        return;
+
+    }
+
+    if(!confirm(
+        "⚠️ Esto actualizará la asistencia. ¿Continuar?"
+    )){
+
+        return;
+
+    }
+
+    db.ref("asistencia")
+    .remove()
+
+    .then(()=>{
+
+        let updates = {};
+
+        datosAsistencia.forEach(row => {
+
+            let legajo =
+            String(row["LEGAJO"] || "")
+            .trim();
+
+            if(!legajo) return;
+
+            updates[
+                "asistencia/" + legajo
+            ] = {
+
+                legajo: legajo,
+
+                trabajador:
+                row["TRABAJADOR"] || "",
+
+                supervisor:
+                row["SUPERVISOR"] || "",
+
+                grupo:
+                row["GRUPO"] || "",
+
+                actividad:
+                row["ACTIVIDAD"] || "",
+
+                centro_costo:
+                row["CENTRO DE COSTO"] || "",
+
+                planilla:
+                row["PLANILLA"] || "",
+
+                hora_inicio:
+                row["H. INICIO"] || "",
+
+                hora_fin:
+                row["H. FIN"] || "",
+
+                estado:
+                row["ESTADO REG."] || "",
+
+                fecha:
+                row["FECHA"] || "",
+
+                procedencia:
+                row["PROCEDENCIA"] || "",
+
+                residencia:
+                row["RESIDENCIA"] || ""
+
+            };
+
+        });
+
+        db.ref()
+        .update(updates)
+
+        .then(()=>{
+
+            alert(
+                "✅ Asistencia importada correctamente"
+            );
+
+            document
+            .getElementById("statusAsistencia")
+            .innerText =
+            "✅ Base de Asistencia actualizada";
+
+        })
+
+        .catch(error => {
+
+            console.log(error);
+
+            alert(
+                "❌ Error importando asistencia"
+            );
+
+        });
+
+    });
+
+}
 </script>
 
 </body>
