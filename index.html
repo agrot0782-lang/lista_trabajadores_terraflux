@@ -167,9 +167,9 @@ button:hover{
 
     <input
     type="file"
-    id="excelAsistencia">
+    id="excelTareo">
 
-    <button onclick="importarAsistencia()">
+    <button onclick="importarTareo()">
         Actualizar Tareo
     </button>
 
@@ -182,6 +182,30 @@ button:hover{
     </div>
 
 </div>
+<div class="box">
+
+    <h2>
+        🔥 Actualizar Terrapuerto
+    </h2>
+
+    <input
+    type="file"
+    id="excelTerrapuerto">
+
+    <button onclick="importarTerrapuerto()">
+        Actualizar Terrapuerto
+    </button>
+
+    <div
+    class="status"
+    id="statusTerrapuerto">
+
+        Esperando Excel...
+
+    </div>
+
+</div>
+
 <script>
 
 // 🔥 FIREBASE
@@ -211,6 +235,58 @@ var db = firebase.database();
 let datosTrabajadores = [];
 let datosAreas = [];
 let datosTareo = [];
+let datosTerrapuerto = [];
+
+
+
+// ======================================================
+// 🔥 CARGAR EXCEL TERRAPUERTO
+// ======================================================
+document
+.getElementById("excelTerrapuerto")
+.addEventListener("change", function(e){
+
+    const file = e.target.files[0];
+
+    const reader = new FileReader();
+
+    reader.onload = function(e){
+
+        const data =
+        new Uint8Array(e.target.result);
+
+        const workbook =
+        XLSX.read(data,{
+            type:'array'
+        });
+
+        const sheet =
+        workbook.Sheets[
+            workbook.SheetNames[0]
+        ];
+
+        datosTerrapuerto =
+        XLSX.utils.sheet_to_json(
+            sheet,
+            {
+                range:2
+            }
+        );
+
+        console.log(datosTerrapuerto);
+
+        document
+        .getElementById(
+            "statusTerrapuerto"
+        )
+        .innerText =
+        "✅ Excel Terrapuerto cargado";
+
+    };
+
+    reader.readAsArrayBuffer(file);
+
+});
 
 // ======================================================
 // 🔥 CARGAR EXCEL TRABAJADORES
@@ -439,12 +515,12 @@ document
             workbook.SheetNames[0]
         ];
 
-        datosAsistencia =
+        datosTareo =
         XLSX.utils.sheet_to_json(sheet,{
             range:2
         });
 
-        console.log(datosAsistencia);
+        console.log(datosTareo);
 
         document
         .getElementById("statusTareo")
@@ -670,6 +746,107 @@ function importarTareo(){
 
             alert(
                 "❌ Error importando tareo"
+            );
+
+        });
+
+    });
+
+}
+function importarTerrapuerto(){
+
+    if(datosTerrapuerto.length === 0){
+
+        alert(
+            "⚠️ Primero carga el Excel"
+        );
+
+        return;
+
+    }
+
+    if(!confirm(
+        "⚠️ Esto actualizará Terrapuerto. ¿Continuar?"
+    )){
+
+        return;
+
+    }
+
+    db.ref("terrapuerto")
+    .remove()
+
+    .then(()=>{
+
+        let updates = {};
+
+        datosTerrapuerto.forEach(row => {
+
+            let legajo =
+            String(
+                row["LEGAJO"] || ""
+            ).trim();
+
+            if(!legajo) return;
+
+            updates[
+                "terrapuerto/" + legajo
+            ] = {
+
+                legajo: legajo,
+
+                nombres:
+                row["NOMBRES"] || "",
+
+                ap_paterno:
+                row["AP.PATERNO"] || "",
+
+                ap_materno:
+                row["AP.MATERNO"] || "",
+
+                cuadrilla:
+                row["CUADRILLA"] || "",
+
+                fecha:
+                row["FECHA"] || "",
+
+                hora_marcado:
+                row["HORA MARCADO"] || "",
+
+                planilla:
+                row["PLANILLA"] || "",
+
+                cargo:
+                row["CARGO"] || ""
+
+            };
+
+        });
+
+        db.ref()
+        .update(updates)
+
+        .then(()=>{
+
+            alert(
+                "✅ Terrapuerto actualizado"
+            );
+
+            document
+            .getElementById(
+                "statusTerrapuerto"
+            )
+            .innerText =
+            "✅ Base Terrapuerto actualizada";
+
+        })
+
+        .catch(error => {
+
+            console.log(error);
+
+            alert(
+                "❌ Error importando Terrapuerto"
             );
 
         });
