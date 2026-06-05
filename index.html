@@ -162,7 +162,7 @@ button:hover{
 <div class="box">
 
     <h2>
-        🔥 Actualizar Asistencia
+        🔥 Actualizar Tareo
     </h2>
 
     <input
@@ -170,12 +170,12 @@ button:hover{
     id="excelAsistencia">
 
     <button onclick="importarAsistencia()">
-        Actualizar Asistencia
+        Actualizar Tareo
     </button>
 
     <div
     class="status"
-    id="statusAsistencia">
+    id="statusTareo">
 
         Esperando Excel...
 
@@ -210,7 +210,7 @@ var db = firebase.database();
 // 🔥 ARRAYS
 let datosTrabajadores = [];
 let datosAreas = [];
-let datosAsistencia = [];
+let datosTareo = [];
 
 // ======================================================
 // 🔥 CARGAR EXCEL TRABAJADORES
@@ -413,11 +413,11 @@ document
 });
 
 // ======================================================
-// 🔥 CARGAR ASISTENCIA
+// 🔥 CARGAR TAREO
 // ======================================================
 
 document
-.getElementById("excelAsistencia")
+.getElementById("excelTareo")
 .addEventListener("change", function(e){
 
     const file = e.target.files[0];
@@ -447,9 +447,9 @@ document
         console.log(datosAsistencia);
 
         document
-        .getElementById("statusAsistencia")
+        .getElementById("statusTareo")
         .innerText =
-        "✅ Excel de Asistencia cargado";
+        "✅ Excel de Tareo cargado";
 
     };
 
@@ -567,9 +567,9 @@ function importarAreas(){
     });
 
 }
-function importarAsistencia(){
+function importarTareo(){
 
-    if(datosAsistencia.length === 0){
+    if(datosTareo.length === 0){
 
         alert(
             "⚠️ Primero carga un Excel"
@@ -580,21 +580,21 @@ function importarAsistencia(){
     }
 
     if(!confirm(
-        "⚠️ Esto actualizará la asistencia. ¿Continuar?"
+        "⚠️ Esto actualizará el tareo. ¿Continuar?"
     )){
 
         return;
 
     }
 
-    db.ref("asistencia")
+    db.ref("tareo")
     .remove()
 
     .then(()=>{
 
         let updates = {};
 
-        datosAsistencia.forEach(row => {
+        datosTareo.forEach(row => {
 
             let legajo =
             String(row["LEGAJO"] || "")
@@ -603,7 +603,7 @@ function importarAsistencia(){
             if(!legajo) return;
 
             updates[
-                "asistencia/" + legajo
+                "tareo/" + legajo
             ] = {
 
                 legajo: legajo,
@@ -654,13 +654,13 @@ function importarAsistencia(){
         .then(()=>{
 
             alert(
-                "✅ Asistencia importada correctamente"
+                "✅ Tareo importada correctamente"
             );
 
             document
-            .getElementById("statusAsistencia")
+            .getElementById("statusTareo")
             .innerText =
-            "✅ Base de Asistencia actualizada";
+            "✅ Base de Tareo actualizada";
 
         })
 
@@ -669,7 +669,7 @@ function importarAsistencia(){
             console.log(error);
 
             alert(
-                "❌ Error importando asistencia"
+                "❌ Error importando tareo"
             );
 
         });
